@@ -47,6 +47,7 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.Point;
 import com.google.ar.core.Point.OrientationMode;
 import com.google.ar.core.PointCloud;
+import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingFailureReason;
@@ -176,6 +177,9 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
   private final float[] viewInverseMatrix = new float[16];
   private final float[] worldLightDirection = {0.0f, 0.0f, 0.0f, 0.0f};
   private final float[] viewLightDirection = new float[4]; // view x world light direction
+  private boolean isDragging = false;
+  private static final float PIXELS_PER_METER = 100.0f;
+  private float initialTouchX, initialTouchY;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -631,7 +635,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
       List<HitResult> hitResultList;
       if (instantPlacementSettings.isInstantPlacementEnabled()) {
         hitResultList =
-            frame.hitTestInstantPlacement(tap.getX(), tap.getY(), APPROXIMATE_DISTANCE_METERS);
+                frame.hitTestInstantPlacement(tap.getX(), tap.getY(), APPROXIMATE_DISTANCE_METERS);
       } else {
         hitResultList = frame.hitTest(tap);
       }
@@ -643,11 +647,11 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
         if ((trackable instanceof Plane
                 && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
                 && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0))
-            || (trackable instanceof Point
+                || (trackable instanceof Point
                 && ((Point) trackable).getOrientationMode()
-                    == OrientationMode.ESTIMATED_SURFACE_NORMAL)
-            || (trackable instanceof InstantPlacementPoint)
-            || (trackable instanceof DepthPoint)) {
+                == OrientationMode.ESTIMATED_SURFACE_NORMAL)
+                || (trackable instanceof InstantPlacementPoint)
+                || (trackable instanceof DepthPoint)) {
           // Cap the number of objects created. This avoids overloading both the
           // rendering system and ARCore.
           if (wrappedAnchors.size() >= 20) {
@@ -667,6 +671,46 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
           // Instant Placement Point.
           break;
         }
+      }
+      if (tap.getAction() == MotionEvent.ACTION_DOWN) {
+        isDragging = true;
+        initialTouchX = tap.getX();
+        initialTouchY = tap.getY();
+      } else if (tap.getAction() == MotionEvent.ACTION_MOVE && isDragging) {
+        float deltaX = tap.getX() - initialTouchX;
+        float deltaY = tap.getY() - initialTouchY;
+
+        if (!wrappedAnchors.isEmpty()) {
+          Anchor lastAnchor = wrappedAnchors.get(wrappedAnchors.size() - 1).getAnchor();
+          if (lastAnchor != null) {
+            Pose currentPose = lastAnchor.getPose();
+
+            // Obtenez les composants de translation actuels de la pose
+            float[] translation = new float[3];
+            currentPose.getTranslation(translation, 0);
+
+            // Mettez à jour les composants de translation avec le mouvement du doigt
+            translation[0] += deltaX / PIXELS_PER_METER;
+            translation[1] -= deltaY / PIXELS_PER_METER; // Inversion pour la direction Y
+
+            // Créez une nouvelle pose avec la translation mise à jour
+            Pose newPose = Pose.makeTranslation(translation);
+
+            // Composez la nouvelle pose avec la pose actuelle de l'ancre pour mettre à jour la pose
+            Pose updatedPose = currentPose.compose(newPose);
+
+                lastAnchor.detach(); // Détachez l'ancienne ancre
+            lastAnchor = frame.createAnchor(updatedPose); // Créez une nouvelle ancre avec la nouvelle pose
+            wrappedAnchors.get(wrappedAnchors.size() - 1).setAnchor(lastAnchor);
+            Anchor newAnchor = hit.createAnchor();
+            wrappedAnchors.add(new WrappedAnchor(newAnchor, hit.getTrackable()));
+          }
+        }
+
+        initialTouchX = tap.getX();
+        initialTouchY = tap.getY();
+      } else if (tap.getAction() == MotionEvent.ACTION_UP && isDragging) {
+        isDragging = false;
       }
     }
   }
@@ -869,7 +913,12 @@ class WrappedAnchor {
     return anchor;
   }
 
+  public void setAnchor(Anchor newAnchor) {
+    this.anchor.detach(); // Détachez l'ancienne ancre avant de la remplacer
+    this.anchor = newAnchor;
+  }
   public Trackable getTrackable() {
     return trackable;
   }
+
 }
