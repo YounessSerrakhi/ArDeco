@@ -218,12 +218,10 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
   }
   private void resetActivity() {
     finish();
-    Intent intent = new Intent(this, HelloArActivity.class);
-    startActivity(intent);
-    /*Intent intent = getIntent();
+    Intent intent = getIntent();
     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
     startActivity(intent);
-    overridePendingTransition(0, 0);*/
+    overridePendingTransition(0, 0);
   }
 
   /** Menu button to launch feature specific settings. */
