@@ -17,6 +17,7 @@
 package com.google.ar.core.examples.java.helloar;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.media.Image;
 import android.opengl.GLES30;
@@ -176,6 +177,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
   private final float[] viewInverseMatrix = new float[16];
   private final float[] worldLightDirection = {0.0f, 0.0f, 0.0f, 0.0f};
   private final float[] viewLightDirection = new float[4]; // view x world light direction
+  private ImageButton resetBtn;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -206,6 +208,22 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
             popup.show();
           }
         });
+    resetBtn=findViewById(R.id.reset_button);
+    resetBtn.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        resetActivity();
+      }
+    });
+  }
+  private void resetActivity() {
+    finish();
+    Intent intent = new Intent(this, HelloArActivity.class);
+    startActivity(intent);
+    /*Intent intent = getIntent();
+    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+    startActivity(intent);
+    overridePendingTransition(0, 0);*/
   }
 
   /** Menu button to launch feature specific settings. */
