@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AcceuilFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:focusableInTouchMode="true"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="321dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="90dp"
+            android:adjustViewBounds="true"
+            android:src="@drawable/logo" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="11dp"
+            android:gravity="center"
+            android:text="ARDecor"
+            android:textColor="#000"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <com.google.ar.core.examples.java.helloar.TypeWriter
+            android:id="@+id/typeWriter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:text="Bienvenue sur ARDecor, votre application de décoration virtuelle."
+            android:textColor="#555555"
+            android:textSize="14sp"
+            tools:ignore="MissingClass" />
+
+        <!-- Ajout de boutons avec animation -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp">
+
+            <Button
+                android:id="@+id/btnTest"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:layout_weight="1"
+                android:elevation="2dp"
+                android:onClick="onTestButtonClick"
+                android:text="test"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btnCatalogue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Catalogue"
+                android:textColor="#FFFFFF"
+                android:onClick="onCatalogueButtonClick"
+                android:elevation="2dp" />
+
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
