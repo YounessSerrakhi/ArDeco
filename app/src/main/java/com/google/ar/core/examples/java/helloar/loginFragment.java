@@ -1,5 +1,6 @@
 package com.google.ar.core.examples.java.helloar;
 
+import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
@@ -26,6 +27,7 @@ public class loginFragment extends Fragment{
     private FirebaseAuth fAuth;
 
 
+    @SuppressLint("MissingInflatedId")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -45,6 +47,14 @@ public class loginFragment extends Fragment{
             public void onClick(View view) {
                 FragmentNavigation navRegister = (FragmentNavigation) getActivity();
                 navRegister.navigate(new RegisterFragment(), false);
+            }
+        });
+       v.findViewById(R.id.skip).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FirebaseAuth.getInstance().signOut();
+                FragmentNavigation navRegister = (FragmentNavigation) getActivity();
+                navRegister.navigate(new AcceuilFragment(), true);
             }
         });
         return v;
