@@ -1,6 +1,8 @@
 package com.google.ar.core.examples.java.helloar;
 
+
 import android.annotation.SuppressLint;
+
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
@@ -28,6 +30,7 @@ public class loginFragment extends Fragment{
 
 
     @SuppressLint("MissingInflatedId")
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -49,6 +52,7 @@ public class loginFragment extends Fragment{
                 navRegister.navigate(new RegisterFragment(), false);
             }
         });
+
        v.findViewById(R.id.skip).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -57,6 +61,7 @@ public class loginFragment extends Fragment{
                 navRegister.navigate(new AcceuilFragment(), true);
             }
         });
+
         return v;
     }
 

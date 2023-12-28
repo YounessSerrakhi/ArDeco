@@ -31,6 +31,8 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -128,7 +130,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
     -0.273137f,
     0.136569f,
   };
-
+  private boolean confirmationEffectuee = false;
   private static final float Z_NEAR = 0.1f;
   private static final float Z_FAR = 100f;
 
@@ -196,9 +198,11 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
   private final float[] worldLightDirection = {0.0f, 0.0f, 0.0f, 0.0f};
   private final float[] viewLightDirection = new float[4]; // view x world light direction
   private ImageButton imageButton;
+
   RecyclerView recyclerView;
   private FirebaseDatabase firebaseDatabase;
   private DatabaseReference databaseReference;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -206,6 +210,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
     setContentView(R.layout.activity_main);
     surfaceView = findViewById(R.id.surfaceview);
     imageButton=findViewById(R.id.reset_button);
+
     recyclerView = findViewById(R.id.recyclerview);
       //recycler view
       products = new ArrayList<>();
@@ -242,18 +247,6 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
         Log.w(TAG, "Failed to read value.", error.toException());
       }
     });
-// ...
-
-
-
-      /*products.add(new Product("pizza", R.drawable.image1));
-      products.add(new Product("humberger", R.drawable.image2));
-      products.add(new Product("cheese", R.drawable.image3));
-      products.add(new Product("pppp", R.drawable.image4));
-      products.add(new Product("zjzjz", R.drawable.image5));
-      products.add(new Product("poiuy", R.drawable.image6));
-      products.add(new Product("wxcvv", R.drawable.image7));*/
-
 
     displayRotationHelper = new DisplayRotationHelper(/* context= */ this);
 
@@ -280,6 +273,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
           }
         });
 
+
     imageButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -288,6 +282,15 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
     });
   }
   public void renderObjet(){
+
+
+
+    imageButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        reset();
+      }
+    });
 
   }
  public void reset(){
@@ -752,6 +755,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
             || (trackable instanceof DepthPoint)) {
           // Cap the number of objects created. This avoids overloading both the
           // rendering system and ARCore.
+
           if (wrappedAnchors.size() >= 20) {
             wrappedAnchors.get(0).getAnchor().detach();
             wrappedAnchors.remove(0);
@@ -763,6 +767,89 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
           // For devices that support the Depth API, shows a dialog to suggest enabling
           // depth-based occlusion. This dialog needs to be spawned on the UI thread.
           this.runOnUiThread(this::showOcclusionDialogIfNeeded);
+
+          if (wrappedAnchors.size() < 20) {
+            wrappedAnchors.add(new WrappedAnchor(hit.createAnchor(), trackable));
+
+            // Afficher le bouton de confirmation une fois l'objet ajouté
+            runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                ImageButton supprimer = findViewById(R.id.imageView);
+                supprimer.setVisibility(View.VISIBLE);
+                ImageButton confirmButton = findViewById(R.id.imageButton);
+                confirmButton.setVisibility(View.VISIBLE);
+
+
+
+
+
+                confirmButton.setOnClickListener(new View.OnClickListener() {
+                  @Override
+                  public void onClick(View v) {
+                    // Code à exécuter lorsque le bouton de confirmation est cliqué
+
+                    if (!confirmationEffectuee) {
+                      // Sauvegardez l'ancre de l'objet (dans ce cas, ajoutée à la liste ou à tout autre mécanisme de stockage)
+                      WrappedAnchor newWrappedAnchor = new WrappedAnchor(hit.createAnchor(), trackable);
+                      wrappedAnchors.add(newWrappedAnchor);
+
+                      // Affichez un message toast pour indiquer que l'ancre de l'objet a été sauvegardée
+                      Toast.makeText(getApplicationContext(), "Ancre de l'objet sauvegardée", Toast.LENGTH_SHORT).show();
+
+                      // Définissez le drapeau sur true pour indiquer que la confirmation a été effectuée
+                      confirmationEffectuee = true;
+
+                      // Vous pouvez également cacher à nouveau le bouton de confirmation si nécessaire
+                      confirmButton.setVisibility(View.GONE);
+                      supprimer.setVisibility(View.GONE);
+
+                      // Désactivez le déclencheur ou masquez d'autres éléments d'ajout d'objets si nécessaire
+                      // par exemple, si vous avez un bouton "Ajouter un objet", vous pouvez le désactiver
+                      // ou le masquer de la même manière que vous l'avez fait pour le bouton de confirmation
+                      // ...
+
+                    } else {
+
+                      // Affichez un message toast pour indiquer que la confirmation a déjà été effectuée
+                      Toast.makeText(getApplicationContext(), "Confirmation déjà effectuée", Toast.LENGTH_SHORT).show();
+
+                      // Réinitialisez le drapeau de confirmation pour permettre la confirmation d'un autre objet
+                      confirmationEffectuee = false;
+
+                    }
+                  }
+                });
+
+
+                supprimer.setOnClickListener(new View.OnClickListener() {
+                  @Override
+                  public void onClick(View v) {
+                    // Assurez-vous que wrappedAnchors est une variable de classe ou un champ de classe.
+                    if (!wrappedAnchors.isEmpty()) {
+                      // Supprimez l'objet du monde AR et de la liste d'ancres.
+                      WrappedAnchor removedAnchor = wrappedAnchors.remove(wrappedAnchors.size() - 1);
+                      removedAnchor.getAnchor().detach(); // Détachez l'ancre du monde AR.
+
+                      // Affichez un message toast pour indiquer que l'objet a été supprimé.
+                      Toast.makeText(getApplicationContext(), "Objet supprimé", Toast.LENGTH_SHORT).show();
+                      supprimer.setVisibility(View.GONE);
+                      confirmButton.setVisibility(View.GONE);
+
+
+                    } else {
+                      // Affichez un message toast pour indiquer qu'il n'y a pas d'objet à supprimer.
+                      Toast.makeText(getApplicationContext(), "Aucun objet à supprimer", Toast.LENGTH_SHORT).show();
+                    }
+                  }
+                });
+              }
+            });
+
+
+
+          }
+
 
           // Hits are sorted by depth. Consider only closest hit on a plane, Oriented Point, or
           // Instant Placement Point.
