@@ -1,4 +1,3 @@
-
 <h3>In GitHub</h3>
 <p>1. Fork this GitHub repo</p>
 <p>2. Go to your forked repo and copy the HTTP link</p>
@@ -25,4 +24,3 @@
 <h3>Now Go to Your GitHub</h3>
 <p>14. Create a pull request from your beta to my beta</p>
 <p>15. Cff ana hantkelef, thank you for your engagement :) <em>rewrite this with HTML tags</em></p>
-
