@@ -20,4 +20,5 @@
   <item android:id="@+id/depth_settings" android:title="Depth API"/>
   <item android:id="@+id/instant_placement_settings"
       android:title="Instant Placement"/>
+  <item android:id="@+id/logout" android:title="Log Out"/>
 </menu>

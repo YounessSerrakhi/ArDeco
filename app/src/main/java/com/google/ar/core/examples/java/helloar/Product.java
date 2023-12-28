@@ -8,6 +8,10 @@ public class Product {
         private String img2;
         private String img3;
 
+    int imaage;
+
+
+
     public Product(String name, String imageResourceId, String img1, String img2, String img3, float price) {
         this.name = name;
         this.imageResourceId = imageResourceId;
@@ -15,6 +19,22 @@ public class Product {
         this.img1 = img1;
         this.img2 = img2;
         this.img3 = img3;
+
+
+    }
+
+    public int getImaage() {
+        return imaage;
+    }
+
+    public void setImaage(int imaage) {
+        this.imaage = imaage;
+    }
+
+    public Product(String pizza, int image1) {
+        this.name=pizza;
+        this.imaage=image1;
+
     }
 
     public float getPrice() {

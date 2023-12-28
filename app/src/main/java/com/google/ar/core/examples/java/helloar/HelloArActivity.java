@@ -16,6 +16,10 @@
 
 package com.google.ar.core.examples.java.helloar;
 
+import static android.content.ContentValues.TAG;
+
+import static com.google.android.material.internal.ContextUtils.getActivity;
+
 import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.media.Image;
@@ -31,9 +35,15 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.ar.core.Anchor;
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.ArCoreApk.Availability;
@@ -78,6 +88,13 @@ import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -91,9 +108,12 @@ import java.util.List;
  * plane to place a 3D model.
  */
 public class HelloArActivity extends AppCompatActivity implements SampleRender.Renderer {
+    RecyclerView listView;
+    ObjetAdapter adapter;
+    ArrayList<Product> products;
 
   private static final String TAG = HelloArActivity.class.getSimpleName();
-
+  Frame frame;
   private static final String SEARCHING_PLANE_MESSAGE = "Searching for surfaces...";
   private static final String WAITING_FOR_TAP_MESSAGE = "Tap on a surface to place an object.";
 
@@ -133,7 +153,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
   private BackgroundRenderer backgroundRenderer;
   private Framebuffer virtualSceneFramebuffer;
   private boolean hasSetTextureNames = false;
-
+  Camera camera;
   private final DepthSettings depthSettings = new DepthSettings();
   private boolean[] depthSettingsMenuDialogCheckboxes = new boolean[2];
 
@@ -161,7 +181,6 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
   private Shader virtualObjectShader;
   private Texture virtualObjectAlbedoTexture;
   private Texture virtualObjectAlbedoInstantPlacementTexture;
-
   private final List<WrappedAnchor> wrappedAnchors = new ArrayList<>();
 
   // Environmental HDR
@@ -180,12 +199,55 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
   private final float[] viewLightDirection = new float[4]; // view x world light direction
   private ImageButton imageButton;
 
+  RecyclerView recyclerView;
+  private FirebaseDatabase firebaseDatabase;
+  private DatabaseReference databaseReference;
+
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     surfaceView = findViewById(R.id.surfaceview);
     imageButton=findViewById(R.id.reset_button);
+
+    recyclerView = findViewById(R.id.recyclerview);
+      //recycler view
+      products = new ArrayList<>();
+    firebaseDatabase = FirebaseDatabase.getInstance();
+    databaseReference = firebaseDatabase.getReference("products");
+
+    databaseReference.addValueEventListener(new ValueEventListener() {
+      @Override
+      public void onDataChange(DataSnapshot dataSnapshot) {
+        try {
+          ArrayList<Product> products = new ArrayList<>();
+          for (DataSnapshot d : dataSnapshot.getChildren()) {
+            Product p = new Product(d.child("Name").getValue().toString(), d.child("img").getValue().toString(), d.child("img1").getValue().toString(), d.child("img2").getValue().toString(), d.child("img3").getValue().toString(), 0);
+            products.add(p);
+          }
+
+          ObjetAdapter adapter = new ObjetAdapter(products, new ObjetAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Product product) {
+              // Gérez le clic sur l'élément ici
+            }
+          });
+
+          recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.HORIZONTAL, false));
+          recyclerView.setAdapter(adapter);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+
+      @Override
+      public void onCancelled(DatabaseError error) {
+        // Failed to read value
+        Log.w(TAG, "Failed to read value.", error.toException());
+      }
+    });
+
     displayRotationHelper = new DisplayRotationHelper(/* context= */ this);
 
     // Set up touch listener.
@@ -211,12 +273,25 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
           }
         });
 
+
     imageButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         reset();
       }
     });
+  }
+  public void renderObjet(){
+
+
+
+    imageButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        reset();
+      }
+    });
+
   }
  public void reset(){
     wrappedAnchors.clear();
@@ -229,9 +304,26 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
     } else if (item.getItemId() == R.id.instant_placement_settings) {
       launchInstantPlacementSettingsMenuDialog();
       return true;
+    }else if (item.getItemId() == R.id.logout) {
+      logout();
+      return true;
     }
     return false;
   }
+
+  private void logout() {
+    FirebaseAuth.getInstance().signOut();
+
+    // le gestionnaire de fragment de l'activité
+    FragmentManager fragmentManager = getSupportFragmentManager();
+    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+    fragmentTransaction.replace(R.id.container, new loginFragment());
+    fragmentTransaction.addToBackStack(null);
+
+    // Appliquez la transaction
+    fragmentTransaction.commit();
+  }
+
 
   @Override
   protected void onDestroy() {
@@ -492,7 +584,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
     // Obtain the current frame from the AR Session. When the configuration is set to
     // UpdateMode.BLOCKING (it is by default), this will throttle the rendering to the
     // camera framerate.
-    Frame frame;
+
     try {
       frame = session.update();
     } catch (CameraNotAvailableException e) {
@@ -500,7 +592,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
       messageSnackbarHelper.showError(this, "Camera not available. Try restarting the app.");
       return;
     }
-    Camera camera = frame.getCamera();
+     camera = frame.getCamera();
 
     // Update BackgroundRenderer state to match the depth settings.
     try {
@@ -663,6 +755,19 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
             || (trackable instanceof DepthPoint)) {
           // Cap the number of objects created. This avoids overloading both the
           // rendering system and ARCore.
+
+          if (wrappedAnchors.size() >= 20) {
+            wrappedAnchors.get(0).getAnchor().detach();
+            wrappedAnchors.remove(0);
+          }
+          // Adding an Anchor tells ARCore that it should track this position in
+          // space. This anchor is created on the Plane to place the 3D model
+          // in the correct position relative both to the world and to the plane.
+          wrappedAnchors.add(new WrappedAnchor(hit.createAnchor(), trackable));
+          // For devices that support the Depth API, shows a dialog to suggest enabling
+          // depth-based occlusion. This dialog needs to be spawned on the UI thread.
+          this.runOnUiThread(this::showOcclusionDialogIfNeeded);
+
           if (wrappedAnchors.size() < 20) {
             wrappedAnchors.add(new WrappedAnchor(hit.createAnchor(), trackable));
 
@@ -744,6 +849,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
 
 
           }
+
 
           // Hits are sorted by depth. Consider only closest hit on a plane, Oriented Point, or
           // Instant Placement Point.

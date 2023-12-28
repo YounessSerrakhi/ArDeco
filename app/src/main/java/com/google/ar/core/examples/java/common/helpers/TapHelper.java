@@ -38,8 +38,7 @@ public final class TapHelper implements OnTouchListener {
    */
   public TapHelper(Context context) {
     gestureDetector =
-        new GestureDetector(
-            context,
+        new GestureDetector(context,
             new GestureDetector.SimpleOnGestureListener() {
               @Override
               public boolean onSingleTapUp(MotionEvent e) {
