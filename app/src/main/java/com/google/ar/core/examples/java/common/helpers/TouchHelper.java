@@ -6,17 +6,19 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * Helper to detect taps and swipe events using Android GestureDetector, and pass them between
- * UI thread and render thread.
+ * Helper to detect taps, swipe events, and rotation gestures using Android touch events,
+ * and pass them between UI thread and render thread.
  */
 public final class TouchHelper implements OnTouchListener {
     private final GestureDetector gestureDetector;
     private final BlockingQueue<MotionEvent> queuedSingleTaps = new ArrayBlockingQueue<>(16);
     private final BlockingQueue<MotionEvent> queuedSwipeEvents = new ArrayBlockingQueue<>(16);
+    private final RotationHelper rotationHelper;
 
     /**
      * Creates the touch helper.
@@ -48,6 +50,8 @@ public final class TouchHelper implements OnTouchListener {
                                 return true;
                             }
                         });
+
+        rotationHelper = new RotationHelper();
     }
 
     /**
@@ -68,8 +72,25 @@ public final class TouchHelper implements OnTouchListener {
         return queuedSwipeEvents.poll();
     }
 
+    /**
+     * Polls for a rotation event.
+     *
+     * @return If a rotation event was queued, a RotationEvent representing the rotation. Otherwise, null if no rotation events are queued.
+     */
+    public RotationHelper.RotationEvent pollRotation() {
+        return rotationHelper.pollRotation();
+    }
+
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        return gestureDetector.onTouchEvent(motionEvent);
+        // Handle rotation events using the RotationHelper
+        rotationHelper.onTouch(view, motionEvent);
+
+        // Handle other events using the GestureDetector
+        boolean gestureHandled = gestureDetector.onTouchEvent(motionEvent);
+
+        // Return false to allow the event to be passed to other touch listeners
+        return gestureHandled;
     }
+
 }

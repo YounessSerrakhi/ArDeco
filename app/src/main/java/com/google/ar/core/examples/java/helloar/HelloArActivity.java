@@ -68,6 +68,7 @@ import com.google.ar.core.examples.java.common.helpers.DepthSettings;
 import com.google.ar.core.examples.java.common.helpers.DisplayRotationHelper;
 import com.google.ar.core.examples.java.common.helpers.FullScreenHelper;
 import com.google.ar.core.examples.java.common.helpers.InstantPlacementSettings;
+import com.google.ar.core.examples.java.common.helpers.RotationHelper;
 import com.google.ar.core.examples.java.common.helpers.SnackbarHelper;
 import com.google.ar.core.examples.java.common.helpers.TapHelper;
 import com.google.ar.core.examples.java.common.helpers.TouchHelper;
@@ -735,6 +736,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
   private void handleTap(Frame frame, Camera camera) {
     MotionEvent tap = touchHelper.pollTap();
     MotionEvent swip = touchHelper.pollSwipe();
+    RotationHelper.RotationEvent rotation = touchHelper.pollRotation();
 
     if ((tap != null || swip != null) && camera.getTrackingState() == TrackingState.TRACKING) {
       List<HitResult> hitResultList;
@@ -783,13 +785,20 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
           // Adding an Anchor tells ARCore that it should track this position in
           // space. This anchor is created on the Plane to place the 3D model
           // in the correct position relative both to the world and to the plane.
-          wrappedAnchors.add(new WrappedAnchor(hit.createAnchor(), trackable));
+          //wrappedAnchors.add(new WrappedAnchor(hit.createAnchor(), trackable));
           // For devices that support the Depth API, shows a dialog to suggest enabling
           // depth-based occlusion. This dialog needs to be spawned on the UI thread.
           this.runOnUiThread(this::showOcclusionDialogIfNeeded);
 
-          if (wrappedAnchors.size() < 20) {
+
             wrappedAnchors.add(new WrappedAnchor(hit.createAnchor(), trackable));
+          Log.d("pos attr  :","xxxxx:"+wrappedAnchors.get(0).getAnchor().getPose());
+          if (rotation != null) {
+            wrappedAnchors.get(0).getAnchor().getPose().
+            Log.d("roooootation", "handleTap: " + rotation.getInitialAngle()+ "     to  :"+rotation.getFinalAngle());
+          }
+
+
             // Afficher le bouton de confirmation une fois l'objet ajouté
             runOnUiThread(new Runnable() {
               @Override
@@ -806,37 +815,10 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
                 confirmButton.setOnClickListener(new View.OnClickListener() {
                   @Override
                   public void onClick(View v) {
-                    // Code à exécuter lorsque le bouton de confirmation est cliqué
-
-                    if (!confirmationEffectuee) {
-                      // Sauvegardez l'ancre de l'objet (dans ce cas, ajoutée à la liste ou à tout autre mécanisme de stockage)
-                      WrappedAnchor newWrappedAnchor = new WrappedAnchor(hit.createAnchor(), trackable);
-                      wrappedAnchors.add(newWrappedAnchor);
-
                       // Affichez un message toast pour indiquer que l'ancre de l'objet a été sauvegardée
                       Toast.makeText(getApplicationContext(), "Ancre de l'objet sauvegardée", Toast.LENGTH_SHORT).show();
-
-                      // Définissez le drapeau sur true pour indiquer que la confirmation a été effectuée
                       confirmationEffectuee = true;
-
-                      // Vous pouvez également cacher à nouveau le bouton de confirmation si nécessaire
                       confirmButton.setVisibility(View.GONE);
-                      supprimer.setVisibility(View.GONE);
-
-                      // Désactivez le déclencheur ou masquez d'autres éléments d'ajout d'objets si nécessaire
-                      // par exemple, si vous avez un bouton "Ajouter un objet", vous pouvez le désactiver
-                      // ou le masquer de la même manière que vous l'avez fait pour le bouton de confirmation
-                      // ...
-
-                    } else {
-
-                      // Affichez un message toast pour indiquer que la confirmation a déjà été effectuée
-                      Toast.makeText(getApplicationContext(), "Confirmation déjà effectuée", Toast.LENGTH_SHORT).show();
-
-                      // Réinitialisez le drapeau de confirmation pour permettre la confirmation d'un autre objet
-                      confirmationEffectuee = false;
-
-                    }
                   }
                 });
 
@@ -865,10 +847,6 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
               }
             });
 
-
-
-          }
-          
 
           // Hits are sorted by depth. Consider only closest hit on a plane, Oriented Point, or
           // Instant Placement Point.
